@@ -73,14 +73,16 @@ public class PlanController {
 			if(jo.length() == 0)
 				return new ResponseEntity<String>("{\"message\": \"No Data Found\"}", HttpStatus.NOT_FOUND); // 404
 			
-			JSONObject updatedjo = redisService.patchPlan(key, newjo);
+			redisService.patchPlan(key, newjo);
 			return new ResponseEntity<>("{\"objectId\": \""+ jo.getString(ID) + "\", \"objectType\": \"" + jo.getString(TYPE) + "\", \"message\": \"Created Successfully\", }", HttpStatus.CREATED);
+		}
+		catch(IllegalArgumentException e) {
+			System.out.print(e.getMessage());
+			return new ResponseEntity<>("{\"message\": \""+ e.getMessage() + "\"}", HttpStatus.CONFLICT); //409
 		}
 		catch(Exception e) {
 			System.out.print(e.getMessage());
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR); //500
+			return new ResponseEntity<>("{\"message\": \""+ e.getMessage() + "\"}", HttpStatus.INTERNAL_SERVER_ERROR); //500
 		}
-		
-		
 	}
 }

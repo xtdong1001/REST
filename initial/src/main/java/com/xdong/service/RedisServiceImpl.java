@@ -163,29 +163,65 @@ public class RedisServiceImpl implements RedisService {
 	}
 
 	@Override
-	public JSONObject patchPlan(String key, JSONObject newjo) {
+	public void patchPlan(String key, JSONObject newjo) {
+		if(exists(newjo))
+			throw new IllegalArgumentException("Json Obejct already existed.");
+		
 		for(String attribute : newjo.keySet()) {
 			Object obj = newjo.get(attribute);
 			String edgeKey = key + SEP + attribute;
 			if(obj instanceof JSONObject) {
 				JSONObject subObj = (JSONObject)obj;
 				String subObjKey = subObj.getString(TYPE) + SEP + subObj.getString(ID);
-				if(!redisDao.insertSet(edgeKey, subObjKey)) {
-					throw new IllegalArgumentException("Json Obejct already existed.");
-				}
+				redisDao.insertSet(edgeKey, subObjKey);
 				postPlan(subObj);
 			}
 			else if(obj instanceof JSONArray) {
 				for(int i = 0; i < ((JSONArray)obj).length(); i++) {
 					JSONObject subObj = ((JSONArray)obj).getJSONObject(i);
 					String subObjKey = subObj.getString(TYPE) + SEP + subObj.getString(ID);
-					if(!redisDao.insertSet(edgeKey, subObjKey)) {
-						throw new IllegalArgumentException("Json Obejct already existed.");
-					}
+					redisDao.insertSet(edgeKey, subObjKey);
 					postPlan(subObj);
 				}
 			}
 		}
-		return null;
+	}
+	
+	private boolean exists(JSONObject newjo) {
+		Queue<JSONObject> queue = new LinkedList<>();
+		for(String attribute : newjo.keySet()) {
+			Object obj = newjo.get(attribute);
+			if(obj instanceof JSONObject) {
+				JSONObject subObj = (JSONObject)obj;
+				queue.offer(subObj);
+			}
+			else if(obj instanceof JSONArray) {
+				for(int i = 0; i < ((JSONArray)obj).length(); i++) {
+					JSONObject subObj = ((JSONArray)obj).getJSONObject(i);
+					queue.offer(subObj);
+				}
+			}
+		}
+		
+		while(!queue.isEmpty()) {
+			JSONObject cur = queue.poll();
+			String objectkey = cur.getString(TYPE) + SEP + cur.getString(ID);
+			Map<Object, Object> map = redisDao.findMap(objectkey);
+			if( map!= null && map.size() > 0)
+				return true;
+			for(String attribute : cur.keySet()) {
+				Object obj = cur.get(attribute);
+				if(obj instanceof JSONObject) {
+					queue.offer((JSONObject)obj);
+				}
+				else if(obj instanceof JSONArray) {
+					for(int i = 0; i < ((JSONArray)obj).length(); i++) {
+						JSONObject subObj = ((JSONArray)obj).getJSONObject(i);
+						queue.offer(subObj);
+					}
+				}
+			}
+		}
+		return false;
 	}
 }
