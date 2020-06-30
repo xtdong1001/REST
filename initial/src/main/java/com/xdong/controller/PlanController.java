@@ -74,11 +74,7 @@ public class PlanController {
 				return new ResponseEntity<String>("{\"message\": \"No Data Found\"}", HttpStatus.NOT_FOUND); // 404
 			
 			redisService.patchPlan(key, newjo);
-			return new ResponseEntity<>("{\"objectId\": \""+ jo.getString(ID) + "\", \"objectType\": \"" + jo.getString(TYPE) + "\", \"message\": \"Created Successfully\", }", HttpStatus.CREATED);
-		}
-		catch(IllegalArgumentException e) {
-			System.out.print(e.getMessage());
-			return new ResponseEntity<>("{\"message\": \""+ e.getMessage() + "\"}", HttpStatus.CONFLICT); //409
+			return new ResponseEntity<>("{\"objectId\": \""+ jo.getString(ID) + "\", \"objectType\": \"" + jo.getString(TYPE) + "\", \"message\": \"Updated Successfully\", }", HttpStatus.CREATED);
 		}
 		catch(Exception e) {
 			System.out.print(e.getMessage());

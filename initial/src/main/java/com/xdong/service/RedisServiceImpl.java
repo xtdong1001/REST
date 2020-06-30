@@ -164,29 +164,42 @@ public class RedisServiceImpl implements RedisService {
 
 	@Override
 	public void patchPlan(String key, JSONObject newjo) {
-		if(exists(newjo))
-			throw new IllegalArgumentException("Json Obejct already existed.");
-		
 		for(String attribute : newjo.keySet()) {
 			Object obj = newjo.get(attribute);
 			String edgeKey = key + SEP + attribute;
 			if(obj instanceof JSONObject) {
 				JSONObject subObj = (JSONObject)obj;
 				String subObjKey = subObj.getString(TYPE) + SEP + subObj.getString(ID);
-				redisDao.insertSet(edgeKey, subObjKey);
-				postPlan(subObj);
+				
+				Map<Object, Object> map = redisDao.findMap(subObjKey);
+				if(map == null || map.size() == 0) {
+					redisDao.insertSet(edgeKey, subObjKey);
+					postPlan(subObj);
+				}
+				else {
+					deletePlan(subObjKey);
+					postPlan(subObj);
+				}
 			}
 			else if(obj instanceof JSONArray) {
 				for(int i = 0; i < ((JSONArray)obj).length(); i++) {
 					JSONObject subObj = ((JSONArray)obj).getJSONObject(i);
 					String subObjKey = subObj.getString(TYPE) + SEP + subObj.getString(ID);
-					redisDao.insertSet(edgeKey, subObjKey);
-					postPlan(subObj);
+					
+					Map<Object, Object> map = redisDao.findMap(subObjKey);
+					if(map == null || map.size() == 0) {
+						redisDao.insertSet(edgeKey, subObjKey);
+						postPlan(subObj);
+					}
+					else {
+						deletePlan(subObjKey);
+						postPlan(subObj);
+					}
 				}
 			}
 		}
 	}
-	
+	/*
 	private boolean exists(JSONObject newjo) {
 		Queue<JSONObject> queue = new LinkedList<>();
 		for(String attribute : newjo.keySet()) {
@@ -223,5 +236,5 @@ public class RedisServiceImpl implements RedisService {
 			}
 		}
 		return false;
-	}
+	}*/
 }
