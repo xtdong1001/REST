@@ -62,18 +62,18 @@ public class RedisConfig {
         return new ChannelTopic("pubsub:queue");
     }
     
-    @Bean
-    public ShallowEtagHeaderFilter shallowEtagHeaderFilter() {
-        return new ShallowEtagHeaderFilter();
-    }
-    
-    @Bean
-    public FilterRegistrationBean<ShallowEtagHeaderFilter> filterRegistration() {
-        FilterRegistrationBean<ShallowEtagHeaderFilter> filterRegistrationBean
-          = new FilterRegistrationBean<>( new ShallowEtagHeaderFilter());
-        filterRegistrationBean.addUrlPatterns("/plan/*");
-        filterRegistrationBean.setName("etagFilter");
-        System.out.println("inside shallow etag header filter registration bean");
-        return filterRegistrationBean;
-    }
+//    @Bean
+//    public ShallowEtagHeaderFilter shallowEtagHeaderFilter() {
+//        return new ShallowEtagHeaderFilter();
+//    }
+//    
+//    @Bean
+//    public FilterRegistrationBean<ShallowEtagHeaderFilter> filterRegistration() {
+//        FilterRegistrationBean<ShallowEtagHeaderFilter> filterRegistrationBean
+//          = new FilterRegistrationBean<>( new ShallowEtagHeaderFilter());
+//        filterRegistrationBean.addUrlPatterns("/*");
+//        filterRegistrationBean.setName("etagFilter");
+//        System.out.println("inside shallow etag header filter registration bean");
+//        return filterRegistrationBean;
+//    }
 }
