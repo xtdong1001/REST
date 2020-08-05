@@ -44,15 +44,17 @@ public class PlanController {
 				return new ResponseEntity<>("{\"message\": \"A plan already exists with id " + jo.getString(ID) +"\"}",HttpStatus.CONFLICT);
 			
 			redisService.postPlan(jo);
+			redisService.enqueue(jo.getString(ID), jo, "post");
 			
+			jo = redisService.getPlan(key);
 			HttpHeaders resHeaders = new HttpHeaders();
 			resHeaders.setETag("\"" + getSHAString(jo.toString()) + "\"");
 			
 			return new ResponseEntity<>("{\"objectId\": \""+ jo.getString(ID) + "\", \"objectType\": \"" + jo.getString(TYPE) + "\", \"message\": \"Created Successfully\", }", resHeaders, HttpStatus.CREATED);
 		}
 		catch(Exception e) {
-			System.out.print(e.getMessage());
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR); //500
+			e.printStackTrace();
+			return new ResponseEntity<>("{\"message\": \""+ e.getMessage() + "\"}", HttpStatus.INTERNAL_SERVER_ERROR); //500
 		}
 		
 	}
@@ -81,7 +83,7 @@ public class PlanController {
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return new ResponseEntity<String>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<String>("{\"message\": \""+ e.getMessage() + "\"}", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
 	}
@@ -89,6 +91,7 @@ public class PlanController {
 
 	@RequestMapping(value = "/{type}/{id}", method = RequestMethod.DELETE)
 	public ResponseEntity<String> delete(@PathVariable("type") String type, @PathVariable("id") String id) {
+		redisService.enqueue(type + SEP + id);
 		JSONObject jo = redisService.deletePlan(type + SEP + id);
 		if(jo.length() == 0)
 			return new ResponseEntity<String>("{\"message\": \"No Data Found\"}", HttpStatus.GONE); //410
@@ -114,10 +117,12 @@ public class PlanController {
 			String newETag = "\"" + getSHAString(jo.toString()) + "\"";
 			resHeaders.setETag(newETag);
 			
-			if(oldETag != null && oldETag.length() > 0 && !oldETag.equals(newETag))
+			if(oldETag != null && !oldETag.equals(newETag))
 				return new ResponseEntity<>("{\"objectId\": \""+ jo.getString(ID) + "\", \"objectType\": \"" + jo.getString(TYPE) + "\", \"message\": \"Error! The plan has been modified\", }", resHeaders, HttpStatus.CONFLICT);
 			
+			
 			redisService.patchPlan(key, newjo);
+			redisService.enqueue(jo.getString(ID), newjo, "patch");
 			
 			newETag = "\"" + getSHAString(redisService.getPlan(key).toString()) + "\"";
 			
@@ -125,7 +130,7 @@ public class PlanController {
 			return new ResponseEntity<>("{\"objectId\": \""+ jo.getString(ID) + "\", \"objectType\": \"" + jo.getString(TYPE) + "\", \"message\": \"Updated Successfully\", }", resHeaders, HttpStatus.OK);
 		}
 		catch(Exception e) {
-			System.out.print(e.getMessage());
+			e.printStackTrace();
 			return new ResponseEntity<>("{\"message\": \""+ e.getMessage() + "\"}", HttpStatus.BAD_REQUEST); //
 		}
 	}

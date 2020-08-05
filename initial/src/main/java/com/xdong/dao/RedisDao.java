@@ -18,6 +18,8 @@ public interface RedisDao {
     
 	public void delete(String key);
     
+	public void enqueue(String input);
+	
     /**
      * find a plan
      */

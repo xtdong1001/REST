@@ -9,18 +9,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
+import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class RedisDaoImpl implements RedisDao  {
 
 	private RedisTemplate<String, Object> redisTemplate;
+	private ChannelTopic topic;
     private HashOperations hashOperations;
     private SetOperations setOperations;
 	
     @Autowired
-    public RedisDaoImpl(RedisTemplate<String, Object> redisTemplate){
+    public RedisDaoImpl(RedisTemplate<String, Object> redisTemplate, ChannelTopic topic){
         this.redisTemplate = redisTemplate;
+        this.topic = topic;
     }
 
     @PostConstruct
@@ -81,6 +84,12 @@ public class RedisDaoImpl implements RedisDao  {
 	@Override
 	public Set<String> getKeys(String pattern) {
 		return redisTemplate.keys(pattern);
+	}
+
+	@Override
+	public void enqueue(String input) {
+		redisTemplate.convertAndSend(topic.getTopic(), input);
+		
 	}
 
 }

@@ -1,5 +1,9 @@
 package com.xdong.config;
 
+import java.util.UUID;
+import java.util.concurrent.Executors;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -14,9 +18,7 @@ import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.web.filter.ShallowEtagHeaderFilter;
 
-import com.xdong.queue.MessagePublisher;
-import com.xdong.queue.MessagePublisherImpl;
-import com.xdong.queue.MessageSubscriber;
+import com.xdong.service.RedisQueueReceiver;
 
 @Configuration
 @ComponentScan("com.xdong")
@@ -40,26 +42,18 @@ public class RedisConfig {
     }
 
     @Bean
-    MessageListenerAdapter messageListener() {
-        return new MessageListenerAdapter(new MessageSubscriber());
-    }
-
-    @Bean
-    RedisMessageListenerContainer redisContainer() {
+    @Autowired
+    RedisMessageListenerContainer redisContainer(RedisQueueReceiver reciever) {
         final RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(jedisConnectionFactory());
-        container.addMessageListener(messageListener(), topic());
+        container.addMessageListener(new MessageListenerAdapter(reciever), topic());
+        container.setTaskExecutor(Executors.newFixedThreadPool(4));
         return container;
     }
 
     @Bean
-    MessagePublisher redisPublisher() {
-        return new MessagePublisherImpl(redisTemplate(), topic());
-    }
-
-    @Bean
     ChannelTopic topic() {
-        return new ChannelTopic("pubsub:queue");
+        return new ChannelTopic(UUID.randomUUID().toString());
     }
     
 //    @Bean

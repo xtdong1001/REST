@@ -10,4 +10,6 @@ public interface RedisService {
 	public JSONObject deletePlan(final String key);
 	public boolean validate(JSONObject jo);
 	public boolean exist(String key);
+	public void enqueue(String key, JSONObject jo, String requestType);
+	public void enqueue(String key);
 }

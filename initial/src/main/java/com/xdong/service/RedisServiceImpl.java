@@ -237,4 +237,102 @@ public class RedisServiceImpl implements RedisService {
 		}
 		return false;
 	}*/
+
+	/**
+	 * patch and post request
+	 */
+	@Override
+	public void enqueue(String key, JSONObject jo, String requestType) {
+		JSONObject baseObj = new JSONObject();
+		String curKey;
+		if(jo.has(ID))
+			curKey = jo.getString(ID);
+		else
+			curKey = key;
+		
+		for(String attribute : jo.keySet()) {
+			Object obj = jo.get(attribute);
+			if(obj instanceof JSONObject) {
+				JSONObject subObj = (JSONObject)obj;
+				JSONObject joinObj = new JSONObject();
+				JSONObject packet = new JSONObject();
+				//change membercostshare to planservice_membercostshare
+				if(attribute.equals("planserviceCostShares") && subObj.getString(TYPE).equals("membercostshare")) {
+					joinObj.put("name", "planservice_membercostshare");
+				}
+				else {
+					joinObj.put("name", subObj.getString(TYPE));
+				}
+				joinObj.put("parent", curKey);
+				subObj.put("plan_service", joinObj);
+				packet.put("parent_id", curKey);
+				packet.put("document", subObj);
+				packet.put("id", subObj.getString(ID));
+				packet.put("request", requestType);
+				redisDao.enqueue(packet.toString());
+			}
+			else if (obj instanceof JSONArray) {
+				for(int i = 0; i < ((JSONArray)obj).length(); i++) {
+					JSONObject subObj = ((JSONArray)obj).getJSONObject(i);
+					//recursively enqueue
+					enqueue(curKey, subObj, requestType);
+				}
+			}
+			else {
+				baseObj.put(attribute, (String)obj);
+			}
+		}
+		if(!baseObj.has(TYPE))
+			return;
+		JSONObject packet = new JSONObject();
+		JSONObject joinObj = new JSONObject();
+		joinObj.put("name", baseObj.getString(TYPE));
+		//top level objects don't have parent
+		if(!baseObj.getString(TYPE).equals("plan")) {
+			joinObj.put("parent", key);
+			packet.put("parent_id", key);
+		}
+		baseObj.put("plan_service", joinObj);
+		/*
+		 * {
+		 *   "parent_id": "",
+		 *   "id" : "",
+		 *   "request" : "post",
+		 *   "document": {
+		 *     "objectType" : "",
+		 *     "objectId" : "",
+		 *     "plan_service" : {
+		 *         "name" : "",
+		 *         "parent" : ""
+		 *     }
+		 *   }
+		 * }
+		 * */
+		packet.put("document", baseObj);
+		packet.put("id", baseObj.getString(ID));
+		packet.put("request", requestType);
+		redisDao.enqueue(packet.toString());
+	}
+
+	/**
+	 * delete request
+	 */
+	@Override
+	public void enqueue(String key) {
+		JSONObject packet = new JSONObject();
+		Set<String> keys = redisDao.getKeys("*" + key + "*");
+		keys.remove(key);
+		
+		packet.put("id", key.split(SEP)[1]);
+		packet.put("request", "delete");
+		
+		for(String edgeKey: keys) {
+			Set subObjs = redisDao.findSet(edgeKey);
+			for(Object str: subObjs) {
+				String subKey = (String)str;
+				enqueue(subKey);
+			}
+		}
+		redisDao.enqueue(packet.toString());
+	}
 }
