@@ -1,6 +1,6 @@
 # INFO 7255 Advanced Big Data Applications and Indexing Techniques
 
-## Pre--requisites
+## Pre-requisites
 1. Redis Server
 2. ElasticSearch and Kibana
 
