@@ -1,8 +1,10 @@
 # INFO 7255 Advanced Big Data Applications and Indexing Techniques
 
 ## Pre-requisites
-1. Redis Server
-2. ElasticSearch and Kibana
+1. Redis-x64-3.2.100
+2. elasticsearch-7.8.0-windows-x86_64
+3. kibana-7.8.1-windows-x86_64
+4. Postman
 
 ## Contents
 This project implements REST APIs that can handle data in JSON with support for CRUD operations and saved the nested JSON document in the NoSQL database (Redis) as key/value pair collections
